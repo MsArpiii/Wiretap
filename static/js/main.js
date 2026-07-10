@@ -366,16 +366,50 @@ document.addEventListener('DOMContentLoaded', () => {
             // Canned responses
             setTimeout(() => {
                 const lowerText = text.toLowerCase();
-                if (lowerText.includes('dropped') || lowerText.includes('block')) {
-                    const dropped = document.getElementById('kpi-dropped').textContent;
-                    addMessage(`In the last run, we dropped ${dropped} packets.`, 'bot');
-                } else if (lowerText.includes('sni') || lowerText.includes('domain')) {
+                
+                // Greetings
+                if (lowerText === 'hi' || lowerText === 'hello' || lowerText.includes('hello') || lowerText.includes('hey')) {
+                    addMessage("Hello there! I'm your Wiretap assistant. How can I help you analyze your traffic today?", 'bot');
+                } 
+                // Dropped
+                else if (lowerText.includes('dropped') || lowerText.includes('block') && !lowerText.includes('apps')) {
+                    const dropped = document.getElementById('kpi-dropped');
+                    const val = dropped ? dropped.textContent : "0";
+                    addMessage(`In the last run, we dropped ${val} packets.`, 'bot');
+                } 
+                // Forwarded
+                else if (lowerText.includes('forward') || lowerText.includes('forwarded') || lowerText.includes('passed')) {
+                    const forwarded = document.getElementById('kpi-forwarded');
+                    const val = forwarded ? forwarded.textContent : "0";
+                    addMessage(`In the last capture, we successfully forwarded ${val} packets.`, 'bot');
+                }
+                // SNI
+                else if (lowerText.includes('sni') || lowerText.includes('domain')) {
                     addMessage('SNI stands for Server Name Indication. It tells us the domain name requested before the connection is fully encrypted.', 'bot');
-                } else if (lowerText.includes('total')) {
-                    const total = document.getElementById('kpi-total').textContent;
-                    addMessage(`We processed ${total} total packets in the last capture.`, 'bot');
-                } else {
-                    addMessage("I'm a simple bot! Try asking how many packets dropped or what SNI is.", 'bot');
+                } 
+                // Total
+                else if (lowerText.includes('total')) {
+                    const total = document.getElementById('kpi-total');
+                    const val = total ? total.textContent : "0";
+                    addMessage(`We processed ${val} total packets in the last capture.`, 'bot');
+                } 
+                // Blocked Apps
+                else if (lowerText.includes('apps are blocked') || lowerText.includes('blocked apps') || lowerText.includes('active rules')) {
+                    const blockedApps = [];
+                    document.querySelectorAll('.switch-container input[type="checkbox"]').forEach(cb => {
+                        if (cb.checked) {
+                            blockedApps.push(cb.dataset.app);
+                        }
+                    });
+                    if (blockedApps.length > 0) {
+                        addMessage(`Currently blocked apps: ${blockedApps.join(', ')}`, 'bot');
+                    } else {
+                        addMessage('No apps are currently blocked. You can toggle them in the dashboard controls.', 'bot');
+                    }
+                } 
+                // Fallback
+                else {
+                    addMessage("I didn't quite catch that! I'm a simple bot — try asking about 'forwarded packets', 'dropped packets', 'blocked apps', or 'SNI'.", 'bot');
                 }
             }, 600);
         };
