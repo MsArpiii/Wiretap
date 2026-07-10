@@ -811,7 +811,7 @@ std::optional<std::string> SNIExtractor::extract(
 |-----------|---------|----------------|
 | IP | `192.168.1.50` | All traffic from this source |
 | App | `YouTube` | All YouTube connections |
-| Domain | `tiktok` | Any SNI containing "tiktok" |
+| Domain | `instagram` | Any SNI containing "instagram" |
 
 ### The Blocking Flow
 
@@ -866,55 +866,33 @@ Connection to YouTube:
 
 ### Prerequisites
 
-- **macOS/Linux** with C++17 compiler
-- **g++** or **clang++**
-- No external libraries needed!
+- **Python 3.8+**
+- `pip` package manager
 
-### Build Commands
+### Setup
 
-**Simple Version:**
 ```bash
-g++ -std=c++17 -O2 -I include -o dpi_simple \
-    src/main_working.cpp \
-    src/pcap_reader.cpp \
-    src/packet_parser.cpp \
-    src/sni_extractor.cpp \
-    src/types.cpp
+# Clone the repository
+git clone https://github.com/MsArpiii/Wiretap.git
+cd Wiretap
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-**Multi-threaded Version:**
+### Running the Application
+
+Wiretap provides a beautiful, interactive web dashboard powered by Flask.
+
 ```bash
-g++ -std=c++17 -pthread -O2 -I include -o dpi_engine \
-    src/dpi_mt.cpp \
-    src/pcap_reader.cpp \
-    src/packet_parser.cpp \
-    src/sni_extractor.cpp \
-    src/types.cpp
+python app.py
 ```
 
-### Running
-
-**Basic usage:**
-```bash
-./dpi_engine test_dpi.pcap output.pcap
-```
-
-**With blocking:**
-```bash
-./dpi_engine test_dpi.pcap output.pcap \
-    --block-app YouTube \
-    --block-app TikTok \
-    --block-ip 192.168.1.50 \
-    --block-domain facebook
-```
-
-**Configure threads (multi-threaded only):**
-```bash
-./dpi_engine input.pcap output.pcap --lbs 4 --fps 4
-# Creates 4 LB threads × 4 FP threads = 16 processing threads
-```
+Then open your browser to `http://127.0.0.1:5000`.
 
 ### Creating Test Data
+
+You can generate sample PCAP traffic directly from the dashboard by clicking **Generate Traffic**, or manually via CLI:
 
 ```bash
 python3 generate_test_pcap.py
@@ -923,34 +901,14 @@ python3 generate_test_pcap.py
 
 ---
 
-## 11. Understanding the Output
+## 11. Using the Dashboard
 
-### Sample Output
-
-```
-╔══════════════════════════════════════════════════════════════╗
-║              DPI ENGINE v2.0 (Multi-threaded)                 ║
-╠══════════════════════════════════════════════════════════════╣
-║ Load Balancers:  2    FPs per LB:  2    Total FPs:  4        ║
-╚══════════════════════════════════════════════════════════════╝
-
-[Rules] Blocked app: YouTube
-[Rules] Blocked IP: 192.168.1.50
-
-[Reader] Processing packets...
-[Reader] Done reading 77 packets
-
-╔══════════════════════════════════════════════════════════════╗
-║                      PROCESSING REPORT                        ║
-╠══════════════════════════════════════════════════════════════╣
-║ Total Packets:                77                              ║
-║ Total Bytes:                5738                              ║
-║ TCP Packets:                  73                              ║
-║ UDP Packets:                   4                              ║
-╠══════════════════════════════════════════════════════════════╣
-║ Forwarded:                    69                              ║
-║ Dropped:                       8                              ║
-╠══════════════════════════════════════════════════════════════╣
+When you open the web interface, you'll see:
+- **Top Stats**: Live numbers for total packets processed, forwarded, dropped, and active rules.
+- **Traffic Log**: A detailed breakdown of all detected domains and their respective flows.
+- **App Blocking Rules**: Toggles to instantly block traffic from specific applications (e.g., YouTube, Instagram, Facebook).
+- **Application Breakdown**: A chart showing the proportion of traffic by application.
+- **Ask Wiretap**: An interactive chat widget to query your packet statistics using natural language!
 ║ THREAD STATISTICS                                             ║
 ║   LB0 dispatched:             53                              ║
 ║   LB1 dispatched:             24                              ║

@@ -533,7 +533,7 @@ input:checked + .slider:before {
 }
 
 .badge-youtube { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-.badge-tiktok { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.badge-instagram { background: linear-gradient(45deg, rgba(245,133,41,0.15), rgba(221,42,123,0.15)); color: #e1306c; }
 .badge-facebook { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 .badge-github { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
 .badge-unknown { background: rgba(255, 255, 255, 0.1); color: var(--text-secondary); }
@@ -751,3 +751,12 @@ input:checked + .slider:before {
     cursor: pointer;
     font-weight: 600;
 }
+
+/* View System */
+.view-content { display: none; animation: fadeIn 0.3s ease; }
+.view-content.active { display: block; }
+/* Full Page Traffic Table */
+.traffic-table-container { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); margin-top: 20px; }
+.traffic-table { width: 100%; border-collapse: collapse; }
+.traffic-table th { text-align: left; padding: 12px; border-bottom: 2px solid var(--card-border); color: var(--text-muted); }
+.traffic-table td { padding: 12px; border-bottom: 1px solid var(--card-border); }

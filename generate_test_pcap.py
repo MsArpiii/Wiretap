@@ -160,7 +160,7 @@ def main():
         ('104.16.85.20', 'discord.com', 443),
         ('35.186.224.25', 'zoom.us', 443),
         ('35.186.227.140', 'web.telegram.org', 443),
-        ('99.86.0.100', 'www.tiktok.com', 443),
+        ('99.86.0.100', 'www.instagram.com', 443),
         ('35.186.224.47', 'open.spotify.com', 443),
         ('192.0.78.24', 'www.cloudflare.com', 443),
         ('13.107.42.14', 'www.microsoft.com', 443),

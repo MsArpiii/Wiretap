@@ -53,16 +53,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Fix Sidebar links
+    // Sidebar views toggle
     const sidebarLinks = document.querySelectorAll('.sidebar-nav .nav-item');
+    const views = document.querySelectorAll('.view-content');
+    
     sidebarLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
+            const text = e.currentTarget.textContent.trim().toLowerCase();
+            
             sidebarLinks.forEach(l => l.classList.remove('active'));
             e.currentTarget.classList.add('active');
-            // Show alert just to prove it works
-            if (!e.currentTarget.textContent.includes('Dashboard')) {
-                alert(e.currentTarget.textContent.trim() + " section is under construction!");
+            
+            views.forEach(v => v.classList.remove('active'));
+            
+            if (text.includes('dashboard')) {
+                const v = document.getElementById('view-dashboard');
+                if (v) v.classList.add('active');
+            } else if (text.includes('traffic')) {
+                const v = document.getElementById('view-traffic');
+                if (v) v.classList.add('active');
+            } else if (text.includes('rules')) {
+                const v = document.getElementById('view-rules');
+                if (v) v.classList.add('active');
+            } else if (text.includes('settings')) {
+                const v = document.getElementById('view-settings');
+                if (v) v.classList.add('active');
             }
         });
     });
@@ -179,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getBadgeClass = (appName) => {
         const mapping = {
             'YOUTUBE': 'badge-youtube',
-            'TIKTOK': 'badge-tiktok',
+            'INSTAGRAM': 'badge-instagram',
             'FACEBOOK': 'badge-facebook',
             'GITHUB': 'badge-github'
         };
@@ -187,12 +203,32 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Populate Traffic List
-    const renderTrafficList = (domains) => {
+    const renderTrafficList = (domains, blockedApps = []) => {
         domainList.innerHTML = '';
+        const tableBody = document.getElementById('traffic-table-body');
+        if (tableBody) tableBody.innerHTML = '';
         
         if (domains.length === 0) {
             domainList.innerHTML = '<div style="color: var(--text-muted); padding: 10px 0;">No domains detected</div>';
+            if (tableBody) tableBody.innerHTML = '<tr><td colspan="4">No data available. Run analysis first.</td></tr>';
             return;
+        }
+        
+        // Populate full table
+        if (tableBody) {
+            domains.forEach(d => {
+                const tr = document.createElement('tr');
+                const isBlocked = blockedApps.includes(d.app);
+                const actionHtml = isBlocked ? '<span style="color:var(--danger);font-weight:600;">BLOCKED</span>' : '<span style="color:var(--success);font-weight:600;">FORWARDED</span>';
+                
+                tr.innerHTML = `
+                    <td>${d.domain}</td>
+                    <td><span class="app-badge ${getBadgeClass(d.app)}">${d.app}</span></td>
+                    <td>${d.count} flows</td>
+                    <td>${actionHtml}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
         }
         
         // Show top 5
@@ -279,7 +315,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (topKpiRules) animateValue(topKpiRules, 0, blockedApps.length, 1000);
                 
                 renderChart(stats.applications, currentChartType);
-                renderTrafficList(stats.domains);
+                renderTrafficList(stats.domains, blockedApps);
+                
+                // Update active rules list
+                const activeRulesList = document.getElementById('active-rules-list');
+                if (activeRulesList) {
+                    if (blockedApps.length === 0) {
+                        activeRulesList.innerHTML = '<li>No apps are currently blocked.</li>';
+                    } else {
+                        activeRulesList.innerHTML = blockedApps.map(app => `<li>Blocked App: <span class="app-badge ${getBadgeClass(app)}" style="margin-left: 8px;">${app}</span></li>`).join('');
+                    }
+                }
                 
             } else {
                 if (autoRetry && data.message.includes('not found')) {

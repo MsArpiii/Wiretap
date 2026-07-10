@@ -20,7 +20,7 @@ class AppType(Enum):
     APPLE = 14
     WHATSAPP = 15
     TELEGRAM = 16
-    TIKTOK = 17
+
     SPOTIFY = 18
     ZOOM = 19
     DISCORD = 20
@@ -84,8 +84,8 @@ def sni_to_app_type(sni: str) -> AppType:
         return AppType.WHATSAPP
     elif 'telegram' in sni:
         return AppType.TELEGRAM
-    elif 'tiktok' in sni or 'byteoversea' in sni:
-        return AppType.TIKTOK
+    elif 'instagram' in sni or 'cdninstagram' in sni:
+        return AppType.INSTAGRAM
     elif 'spotify' in sni:
         return AppType.SPOTIFY
     elif 'zoom' in sni:

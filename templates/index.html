@@ -61,6 +61,8 @@
                 </div>
             </header>
 
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="view-content active">
             <!-- Top Stats Row -->
             <div class="top-stats-row">
                 <div class="top-stat-card blue">
@@ -104,9 +106,9 @@
                             <span class="label-text">YouTube</span>
                         </label>
                         <label class="switch-container">
-                            <input type="checkbox" id="toggle-tiktok" data-app="TIKTOK">
+                            <input type="checkbox" id="toggle-instagram" data-app="INSTAGRAM">
                             <span class="slider"></span>
-                            <span class="label-text">TikTok</span>
+                            <span class="label-text">Instagram</span>
                         </label>
                         <label class="switch-container">
                             <input type="checkbox" id="toggle-facebook" data-app="FACEBOOK">
@@ -187,6 +189,51 @@
                 <h2>Awaiting Traffic Data</h2>
                 <p>Configure your blocking rules above and click <strong>Run Analysis</strong> to begin.</p>
             </div>
+            </div> <!-- End Dashboard View -->
+
+            <!-- Traffic Log View -->
+            <div id="view-traffic" class="view-content">
+                <h2>Traffic Log</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Detailed log of all detected flows from the latest capture.</p>
+                <div class="traffic-table-container">
+                    <table class="traffic-table">
+                        <thead>
+                            <tr>
+                                <th>Domain (SNI)</th>
+                                <th>Detected App</th>
+                                <th>Flow Count</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="traffic-table-body">
+                            <tr><td colspan="4">No data available. Run analysis first.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Rules View -->
+            <div id="view-rules" class="view-content">
+                <h2>Blocking Rules</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Manage active Deep Packet Inspection rules.</p>
+                <div class="card" style="max-width: 600px;">
+                    <h3>Active App Rules</h3>
+                    <ul id="active-rules-list" style="margin-top: 15px; line-height: 1.8;">
+                        <li>No apps are currently blocked.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="view-settings" class="view-content">
+                <h2>Settings</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">System configuration and preferences.</p>
+                <div class="card" style="max-width: 600px;">
+                    <h3>General Settings</h3>
+                    <p>Settings configuration is under development.</p>
+                </div>
+            </div>
+
         </main>
     </div>
 
