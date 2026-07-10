@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPI Packet Analyzer Dashboard</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar / Navigation -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h2>DPI Analyzer</h2>
+            </div>
+            
+            <div class="controls">
+                <button id="btn-generate" class="btn primary-btn">
+                    <span class="btn-icon">⚡</span>
+                    Generate Traffic
+                </button>
+                
+                <button id="btn-analyze" class="btn secondary-btn" disabled>
+                    <span class="btn-icon">🔍</span>
+                    Run DPI Engine
+                </button>
+            </div>
+            
+            <div class="status-box">
+                <h4>System Status</h4>
+                <div id="status-message" class="status-message">Idle. Ready to generate traffic.</div>
+                <div class="loader-container hidden" id="loader">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="header">
+                <h1>Network Insights</h1>
+                <p>Deep Packet Inspection Analysis Report</p>
+            </header>
+            
+            <div id="results-dashboard" class="results-dashboard hidden">
+                <!-- KPI Cards -->
+                <section class="kpi-grid">
+                    <div class="kpi-card glass-panel fade-in">
+                        <div class="kpi-icon total">📦</div>
+                        <div class="kpi-details">
+                            <h3>Total Packets</h3>
+                            <div class="kpi-value" id="kpi-total">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card glass-panel fade-in" style="animation-delay: 0.1s;">
+                        <div class="kpi-icon forwarded">✅</div>
+                        <div class="kpi-details">
+                            <h3>Forwarded</h3>
+                            <div class="kpi-value" id="kpi-forwarded">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card glass-panel fade-in" style="animation-delay: 0.2s;">
+                        <div class="kpi-icon dropped">⛔</div>
+                        <div class="kpi-details">
+                            <h3>Dropped</h3>
+                            <div class="kpi-value" id="kpi-dropped">0</div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Charts and Tables -->
+                <section class="details-grid">
+                    <!-- Chart Section -->
+                    <div class="chart-container glass-panel fade-in" style="animation-delay: 0.3s;">
+                        <h3>Application Breakdown</h3>
+                        <div class="canvas-wrapper">
+                            <canvas id="appChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Table Section -->
+                    <div class="table-container glass-panel fade-in" style="animation-delay: 0.4s;">
+                        <h3>Detected Domains & SNIs</h3>
+                        <div class="table-wrapper">
+                            <table id="domain-table">
+                                <thead>
+                                    <tr>
+                                        <th>Domain / SNI</th>
+                                        <th>Application</th>
+                                        <th>Flows</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rows populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <div id="empty-state" class="empty-state">
+                <div class="empty-icon">📊</div>
+                <h3>No Data Available</h3>
+                <p>Generate test traffic and run the DPI engine to see insights.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
