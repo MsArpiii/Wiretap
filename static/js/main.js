@@ -235,73 +235,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    if (btnAnalyze) {
-        btnAnalyze.addEventListener('click', async () => {
-            console.log("Run Analysis clicked");
-            btnAnalyze.disabled = true;
-            const originalText = btnAnalyze.innerHTML;
-            btnAnalyze.innerHTML = '<span class="icon">⏳</span> Processing...';
-            setStatus('Running DPI Engine...', true);
-            
-            // Gather blocked apps from toggles
-            const blockedApps = [];
-            document.querySelectorAll('.switch-container input[type="checkbox"]').forEach(cb => {
-                if (cb.checked) {
-                    blockedApps.push(cb.dataset.app);
-                }
+    const runAnalysis = async (autoRetry = false) => {
+        if (!btnAnalyze) return;
+        btnAnalyze.disabled = true;
+        const originalText = btnAnalyze.innerHTML;
+        btnAnalyze.innerHTML = '<span class="icon">⏳</span> Processing...';
+        setStatus('Running DPI Engine...', true);
+        
+        const blockedApps = [];
+        document.querySelectorAll('.switch-container input[type="checkbox"]').forEach(cb => {
+            if (cb.checked) {
+                blockedApps.push(cb.dataset.app);
+            }
+        });
+        
+        try {
+            const response = await fetch('/api/analyze', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ blocked_apps: blockedApps })
             });
+            const data = await response.json();
             
-            try {
-                const response = await fetch('/api/analyze', { 
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ blocked_apps: blockedApps })
-                });
-                const data = await response.json();
-                console.log("Analysis API Response:", data);
+            if (data.status === 'success') {
+                setStatus('Analysis complete.');
+                if (emptyState) emptyState.classList.add('hidden');
+                if (resultsDashboard) resultsDashboard.classList.remove('hidden');
                 
-                if (data.status === 'success') {
-                    setStatus('Analysis complete.');
-                    
-                    if (emptyState) emptyState.classList.add('hidden');
-                    if (resultsDashboard) resultsDashboard.classList.remove('hidden');
-                    
-                    const stats = data.stats;
-                    
-                    // Animate KPIs
-                    if (kpiTotal) animateValue(kpiTotal, 0, stats.total_packets, 1000);
-                    if (kpiForwarded) animateValue(kpiForwarded, 0, stats.forwarded, 1000);
-                    if (kpiDropped) animateValue(kpiDropped, 0, stats.dropped, 1000);
-                    
-                    // Update Top Stats Row
-                    const topKpiTotal = document.getElementById('top-kpi-total');
-                    const topKpiForwarded = document.getElementById('top-kpi-forwarded');
-                    const topKpiDropped = document.getElementById('top-kpi-dropped');
-                    const topKpiRules = document.getElementById('top-kpi-rules');
-                    
-                    if (topKpiTotal) animateValue(topKpiTotal, 0, stats.total_packets, 1000);
-                    if (topKpiForwarded) animateValue(topKpiForwarded, 0, stats.forwarded, 1000);
-                    if (topKpiDropped) animateValue(topKpiDropped, 0, stats.dropped, 1000);
-                    if (topKpiRules) animateValue(topKpiRules, 0, blockedApps.length, 1000);
-                    
-                    // Render Chart and Table
-                    renderChart(stats.applications, currentChartType);
-                    renderTrafficList(stats.domains);
-                    
+                const stats = data.stats;
+                
+                if (kpiTotal) animateValue(kpiTotal, 0, stats.total_packets, 1000);
+                if (kpiForwarded) animateValue(kpiForwarded, 0, stats.forwarded, 1000);
+                if (kpiDropped) animateValue(kpiDropped, 0, stats.dropped, 1000);
+                
+                const topKpiTotal = document.getElementById('top-kpi-total');
+                const topKpiForwarded = document.getElementById('top-kpi-forwarded');
+                const topKpiDropped = document.getElementById('top-kpi-dropped');
+                const topKpiRules = document.getElementById('top-kpi-rules');
+                
+                if (topKpiTotal) animateValue(topKpiTotal, 0, stats.total_packets, 1000);
+                if (topKpiForwarded) animateValue(topKpiForwarded, 0, stats.forwarded, 1000);
+                if (topKpiDropped) animateValue(topKpiDropped, 0, stats.dropped, 1000);
+                if (topKpiRules) animateValue(topKpiRules, 0, blockedApps.length, 1000);
+                
+                renderChart(stats.applications, currentChartType);
+                renderTrafficList(stats.domains);
+                
+            } else {
+                if (autoRetry && data.message.includes('not found')) {
+                    setStatus('No PCAP found. Generating traffic first...', true);
+                    const genRes = await fetch('/api/generate', { method: 'POST' });
+                    const genData = await genRes.json();
+                    if (genData.status === 'success') {
+                        return runAnalysis(false);
+                    } else {
+                        setStatus(`Error generating traffic: ${genData.message}`);
+                    }
                 } else {
                     setStatus(`Analysis Error: ${data.message}`);
                 }
-            } catch (err) {
-                console.error(err);
-                setStatus('Failed to reach server.');
-            } finally {
-                btnAnalyze.disabled = false;
-                btnAnalyze.innerHTML = originalText;
             }
+        } catch (err) {
+            console.error(err);
+            setStatus('Failed to reach server.');
+        } finally {
+            btnAnalyze.disabled = false;
+            btnAnalyze.innerHTML = originalText;
+        }
+    };
+
+    if (btnAnalyze) {
+        btnAnalyze.addEventListener('click', () => {
+            console.log("Run Analysis clicked");
+            runAnalysis(false);
         });
     }
+
+    // Auto-run analysis on load
+    runAnalysis(true);
     
     // Search logic
     const searchInput = document.getElementById('search-input');
@@ -363,38 +374,46 @@ document.addEventListener('DOMContentLoaded', () => {
             addMessage(text, 'user');
             chatInput.value = '';
             
-            // Canned responses
+            // Canned responses with fuzzy matching
             setTimeout(() => {
                 const lowerText = text.toLowerCase();
                 
+                const matchesAny = (words) => words.some(w => lowerText.includes(w));
+                
                 // Greetings
-                if (lowerText === 'hi' || lowerText === 'hello' || lowerText.includes('hello') || lowerText.includes('hey')) {
+                if (lowerText === 'hi' || lowerText === 'hello' || matchesAny(['hey', 'greetings', 'morning'])) {
                     addMessage("Hello there! I'm your Wiretap assistant. How can I help you analyze your traffic today?", 'bot');
                 } 
-                // Dropped
-                else if (lowerText.includes('dropped') || lowerText.includes('block') && !lowerText.includes('apps')) {
+                // Dropped / Blocked Stats
+                else if (matchesAny(['dropped', 'blocked', 'denied', 'prevented']) && !matchesAny(['what apps', 'which apps'])) {
                     const dropped = document.getElementById('kpi-dropped');
                     const val = dropped ? dropped.textContent : "0";
-                    addMessage(`In the last run, we dropped ${val} packets.`, 'bot');
+                    addMessage(`In the last run, we blocked/dropped ${val} packets from reaching their destination.`, 'bot');
                 } 
-                // Forwarded
-                else if (lowerText.includes('forward') || lowerText.includes('forwarded') || lowerText.includes('passed')) {
+                // Forwarded Stats
+                else if (matchesAny(['forward', 'forwarded', 'passed', 'allowed'])) {
                     const forwarded = document.getElementById('kpi-forwarded');
                     const val = forwarded ? forwarded.textContent : "0";
                     addMessage(`In the last capture, we successfully forwarded ${val} packets.`, 'bot');
                 }
-                // SNI
-                else if (lowerText.includes('sni') || lowerText.includes('domain')) {
-                    addMessage('SNI stands for Server Name Indication. It tells us the domain name requested before the connection is fully encrypted.', 'bot');
-                } 
-                // Total
-                else if (lowerText.includes('total')) {
+                // Definitions (SNI, DPI, TLS)
+                else if (matchesAny(['sni', 'what is sni'])) {
+                    addMessage('SNI stands for Server Name Indication. It exposes the domain name a user is connecting to before the connection is encrypted, allowing us to see what websites are visited.', 'bot');
+                }
+                else if (matchesAny(['dpi', 'what is dpi'])) {
+                    addMessage('DPI is Deep Packet Inspection. It analyzes the payload of a network packet, not just its header, to identify the application or protocol being used.', 'bot');
+                }
+                else if (matchesAny(['tls', 'what is tls'])) {
+                    addMessage('TLS is Transport Layer Security. It encrypts internet traffic. Wiretap extracts the SNI from the TLS Client Hello message to see the domain.', 'bot');
+                }
+                // Total Stats
+                else if (matchesAny(['total', 'how many packets', 'overall'])) {
                     const total = document.getElementById('kpi-total');
                     const val = total ? total.textContent : "0";
                     addMessage(`We processed ${val} total packets in the last capture.`, 'bot');
                 } 
                 // Blocked Apps
-                else if (lowerText.includes('apps are blocked') || lowerText.includes('blocked apps') || lowerText.includes('active rules')) {
+                else if (matchesAny(['apps are blocked', 'blocked apps', 'active rules', 'what is blocked', 'what got blocked'])) {
                     const blockedApps = [];
                     document.querySelectorAll('.switch-container input[type="checkbox"]').forEach(cb => {
                         if (cb.checked) {
@@ -407,9 +426,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         addMessage('No apps are currently blocked. You can toggle them in the dashboard controls.', 'bot');
                     }
                 } 
-                // Fallback
+                // Fallback Rotation
                 else {
-                    addMessage("I didn't quite catch that! I'm a simple bot — try asking about 'forwarded packets', 'dropped packets', 'blocked apps', or 'SNI'.", 'bot');
+                    const fallbacks = [
+                        "I didn't quite catch that! I'm a simple bot — try asking about 'forwarded packets', 'blocked apps', or 'SNI'.",
+                        "Hmm, I'm not sure about that. Try asking me 'how many packets dropped?' or 'what is DPI?'",
+                        "I can only help with Wiretap stats! Ask me about active rules, total packets, or definitions like TLS.",
+                        "Sorry, I didn't understand. Can you rephrase? You can ask about 'dropped', 'forwarded', or 'blocked apps'."
+                    ];
+                    const randomFallback = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+                    addMessage(randomFallback, 'bot');
                 }
             }, 600);
         };
