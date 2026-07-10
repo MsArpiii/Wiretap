@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import os
 from scapy.utils import PcapReader
 import sys
@@ -35,11 +35,14 @@ def analyze_traffic():
         return jsonify({"status": "error", "message": "PCAP file not found. Generate traffic first."}), 404
         
     try:
-        # Initialize engine (without any blocking rules just to see the traffic breakdown)
+        # Initialize engine
         rule_manager = RuleManager()
-        # You could also add blocking rules here if you want to demonstrate dropped packets:
-        # rule_manager.block_app('YOUTUBE')
-        # rule_manager.block_domain('tiktok')
+        
+        # Apply blocking rules from request payload
+        payload = request.json or {}
+        blocked_apps = payload.get('blocked_apps', [])
+        for app_name in blocked_apps:
+            rule_manager.block_app(app_name)
         
         engine = DPIEngine(rule_manager)
         

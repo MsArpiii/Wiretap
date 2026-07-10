@@ -3,119 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DPI Packet Analyzer Dashboard</title>
+    <title>Wiretap Dashboard</title>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2">
 </head>
-<body>
-    <div class="dashboard">
-        <!-- Sidebar / Navigation -->
-        <aside class="sidebar glass-panel">
+<body class="dark-mode">
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
             <div class="logo">
                 <div class="logo-icon"></div>
-                <h2>DPI Analyzer</h2>
+                <h2>Wiretap</h2>
             </div>
-            
-            <div class="controls">
-                <button id="btn-generate" class="btn primary-btn">
-                    <span class="btn-icon">⚡</span>
-                    Generate Traffic
-                </button>
-                
-                <button id="btn-analyze" class="btn secondary-btn" disabled>
-                    <span class="btn-icon">🔍</span>
-                    Run DPI Engine
-                </button>
-            </div>
-            
-            <div class="status-box">
-                <h4>System Status</h4>
-                <div id="status-message" class="status-message">Idle. Ready to generate traffic.</div>
-                <div class="loader-container hidden" id="loader">
-                    <div class="loader"></div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📝</span> Traffic Log
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">🛡️</span> Rules
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">⚙️</span> Settings
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-box">
+                    <div class="status-indicator"></div>
+                    <span id="status-message">System Idle</span>
                 </div>
+                <button id="btn-generate" class="btn-outline">Generate Traffic</button>
             </div>
         </aside>
 
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="header">
-                <h1>Network Insights</h1>
-                <p>Deep Packet Inspection Analysis Report</p>
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-titles">
+                    <h1>Welcome back, Admin 👋</h1>
+                    <p>Here's your network traffic overview</p>
+                </div>
+                <div class="header-actions">
+                    <div class="search-bar">
+                        <span class="icon">🔍</span>
+                        <input type="text" id="search-input" placeholder="Ask about this traffic...">
+                    </div>
+                    <button id="theme-toggle" class="icon-btn" title="Toggle Theme">🌓</button>
+                    <button class="icon-btn" title="Notifications">🔔</button>
+                    <div class="avatar">AD</div>
+                </div>
             </header>
-            
-            <div id="results-dashboard" class="results-dashboard hidden">
-                <!-- KPI Cards -->
-                <section class="kpi-grid">
-                    <div class="kpi-card glass-panel fade-in">
-                        <div class="kpi-icon total">📦</div>
-                        <div class="kpi-details">
-                            <h3>Total Packets</h3>
-                            <div class="kpi-value" id="kpi-total">0</div>
+
+            <!-- Top Stats Row -->
+            <div class="top-stats-row">
+                <div class="top-stat-card blue">
+                    <span class="icon">📦</span>
+                    <div class="top-stat-info">
+                        <span class="label">Total Packets</span>
+                        <span class="value" id="top-kpi-total">0</span>
+                    </div>
+                </div>
+                <div class="top-stat-card green">
+                    <span class="icon">✅</span>
+                    <div class="top-stat-info">
+                        <span class="label">Forwarded</span>
+                        <span class="value" id="top-kpi-forwarded">0</span>
+                    </div>
+                </div>
+                <div class="top-stat-card red">
+                    <span class="icon">⛔</span>
+                    <div class="top-stat-info">
+                        <span class="label">Dropped</span>
+                        <span class="value" id="top-kpi-dropped">0</span>
+                    </div>
+                </div>
+                <div class="top-stat-card purple">
+                    <span class="icon">🛡️</span>
+                    <div class="top-stat-info">
+                        <span class="label">Active Rules</span>
+                        <span class="value" id="top-kpi-rules">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Controls -->
+            <div class="dashboard-controls">
+                <div class="blocking-toggles">
+                    <h3>App Blocking Rules</h3>
+                    <div class="toggle-group">
+                        <label class="switch-container">
+                            <input type="checkbox" id="toggle-youtube" data-app="YOUTUBE">
+                            <span class="slider"></span>
+                            <span class="label-text">YouTube</span>
+                        </label>
+                        <label class="switch-container">
+                            <input type="checkbox" id="toggle-tiktok" data-app="TIKTOK">
+                            <span class="slider"></span>
+                            <span class="label-text">TikTok</span>
+                        </label>
+                        <label class="switch-container">
+                            <input type="checkbox" id="toggle-facebook" data-app="FACEBOOK">
+                            <span class="slider"></span>
+                            <span class="label-text">Facebook</span>
+                        </label>
+                    </div>
+                </div>
+                <button id="btn-analyze" class="btn-gradient">
+                    <span class="icon">🚀</span> Run Analysis
+                </button>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div id="results-dashboard" class="dashboard-grid hidden">
+                <!-- Card 1: Total Packets -->
+                <div class="card stat-card">
+                    <div class="card-header">
+                        <h3>Total Packets Processed</h3>
+                        <div class="pill-toggle">
+                            <span class="active">Last Run</span>
+                            <span>Live</span>
                         </div>
                     </div>
-                    
-                    <div class="kpi-card glass-panel fade-in" style="animation-delay: 0.1s;">
-                        <div class="kpi-icon forwarded">✅</div>
-                        <div class="kpi-details">
-                            <h3>Forwarded</h3>
-                            <div class="kpi-value" id="kpi-forwarded">0</div>
+                    <div class="stat-value" id="kpi-total">0</div>
+                    <div class="stat-subtext">packets analyzed in the last capture</div>
+                </div>
+
+                <!-- Card 2: Traffic Breakdown -->
+                <div class="card traffic-card">
+                    <div class="card-header">
+                        <h3>Traffic Breakdown</h3>
+                        <a href="#" class="link-small">See all</a>
+                    </div>
+                    <div class="traffic-list" id="domain-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Card 3: Blocked vs Forwarded -->
+                <div class="card comparison-card">
+                    <h3>Blocked vs Forwarded</h3>
+                    <div class="mini-stats">
+                        <div class="mini-stat success">
+                            <span class="icon">✅</span>
+                            <div class="mini-stat-info">
+                                <span class="label">Forwarded</span>
+                                <span class="value" id="kpi-forwarded">0</span>
+                            </div>
+                        </div>
+                        <div class="mini-stat danger">
+                            <span class="icon">⛔</span>
+                            <div class="mini-stat-info">
+                                <span class="label">Dropped</span>
+                                <span class="value" id="kpi-dropped">0</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="kpi-card glass-panel fade-in" style="animation-delay: 0.2s;">
-                        <div class="kpi-icon dropped">⛔</div>
-                        <div class="kpi-details">
-                            <h3>Dropped</h3>
-                            <div class="kpi-value" id="kpi-dropped">0</div>
-                        </div>
-                    </div>
-                </section>
-                
-                <!-- Charts and Tables -->
-                <section class="details-grid">
-                    <!-- Chart Section -->
-                    <div class="chart-container glass-panel fade-in" style="animation-delay: 0.3s;">
+                </div>
+
+                <!-- Full Width Chart Card -->
+                <div class="card chart-card full-width">
+                    <div class="card-header">
                         <h3>Application Breakdown</h3>
-                        <div class="canvas-wrapper">
-                            <canvas id="appChart"></canvas>
+                        <div class="pill-toggle" id="chart-type-toggle">
+                            <span class="active" data-type="bar">By App</span>
+                            <span data-type="doughnut">By Protocol</span>
                         </div>
                     </div>
-                    
-                    <!-- Table Section -->
-                    <div class="table-container glass-panel fade-in" style="animation-delay: 0.4s;">
-                        <h3>Detected Domains & SNIs</h3>
-                        <div class="table-wrapper">
-                            <table id="domain-table">
-                                <thead>
-                                    <tr>
-                                        <th>Domain / SNI</th>
-                                        <th>Application</th>
-                                        <th>Flows</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Rows populated via JS -->
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="chart-wrapper">
+                        <canvas id="appChart"></canvas>
                     </div>
-                </section>
+                </div>
             </div>
             
             <div id="empty-state" class="empty-state">
-                <div class="empty-icon">📊</div>
-                <h3>No Data Available</h3>
-                <p>Generate test traffic and run the DPI engine to see insights.</p>
+                <div class="empty-icon">📡</div>
+                <h2>Awaiting Traffic Data</h2>
+                <p>Configure your blocking rules above and click <strong>Run Analysis</strong> to begin.</p>
             </div>
         </main>
     </div>
 
+    <!-- Chat Widget -->
+    <div class="chat-widget">
+        <button id="chat-toggle" class="chat-toggle-btn">💬</button>
+        <div id="chat-panel" class="chat-panel hidden">
+            <div class="chat-header">
+                <h3>Ask Wiretap</h3>
+                <button id="chat-close" class="chat-close-btn">✖</button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <div class="chat-msg bot">Hi! I'm Wiretap. Ask me about your traffic analysis.</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a question...">
+                <button id="chat-send">Send</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=2"></script>
 </body>
 </html>

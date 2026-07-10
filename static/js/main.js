@@ -1,26 +1,82 @@
+console.log("main.js successfully loaded!");
+
+// Global error handler to show errors on screen for debugging
+window.addEventListener('error', function(e) {
+    console.error("Global error:", e.error);
+    const status = document.getElementById('status-message');
+    if (status) status.textContent = "JS Error: " + e.message;
+});
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded fired!");
+    
     const btnGenerate = document.getElementById('btn-generate');
     const btnAnalyze = document.getElementById('btn-analyze');
     const statusMessage = document.getElementById('status-message');
-    const loader = document.getElementById('loader');
     const emptyState = document.getElementById('empty-state');
     const resultsDashboard = document.getElementById('results-dashboard');
+    const themeToggle = document.getElementById('theme-toggle');
     
     // Elements to update
     const kpiTotal = document.getElementById('kpi-total');
     const kpiForwarded = document.getElementById('kpi-forwarded');
     const kpiDropped = document.getElementById('kpi-dropped');
-    const domainTableBody = document.querySelector('#domain-table tbody');
+    const domainList = document.getElementById('domain-list');
+    const chartTypeToggles = document.querySelectorAll('#chart-type-toggle span');
     
     let appChart = null;
+    let currentChartType = 'bar';
+    let currentChartData = {};
+
+    // Theme Toggle
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            if (Object.keys(currentChartData).length > 0) {
+                renderChart(currentChartData, currentChartType);
+            }
+        });
+    }
+
+    // Chart Type Toggle
+    if (chartTypeToggles) {
+        chartTypeToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                chartTypeToggles.forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                currentChartType = e.target.dataset.type;
+                
+                if (Object.keys(currentChartData).length > 0) {
+                    renderChart(currentChartData, currentChartType);
+                }
+            });
+        });
+    }
+    
+    // Fix Sidebar links
+    const sidebarLinks = document.querySelectorAll('.sidebar-nav .nav-item');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            sidebarLinks.forEach(l => l.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            // Show alert just to prove it works
+            if (!e.currentTarget.textContent.includes('Dashboard')) {
+                alert(e.currentTarget.textContent.trim() + " section is under construction!");
+            }
+        });
+    });
 
     // Helper: Update status
     const setStatus = (msg, isLoading = false) => {
         statusMessage.textContent = msg;
+        const indicator = document.querySelector('.status-indicator');
         if (isLoading) {
-            loader.classList.remove('hidden');
+            indicator.style.background = '#f59e0b'; // warning/loading color
+            indicator.style.boxShadow = '0 0 8px #f59e0b';
         } else {
-            loader.classList.add('hidden');
+            indicator.style.background = 'var(--success)';
+            indicator.style.boxShadow = '0 0 8px var(--success)';
         }
     };
 
@@ -39,7 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Chart.js Configuration
-    const renderChart = (appData) => {
+    const renderChart = (appData, type = 'bar') => {
+        currentChartData = appData;
         const ctx = document.getElementById('appChart').getContext('2d');
         
         const labels = Object.keys(appData);
@@ -47,167 +104,286 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Define vibrant colors
         const bgColors = [
-            'rgba(99, 102, 241, 0.8)',   // Indigo
-            'rgba(236, 72, 153, 0.8)',   // Pink
-            'rgba(16, 185, 129, 0.8)',   // Emerald
-            'rgba(245, 158, 11, 0.8)',   // Amber
-            'rgba(139, 92, 246, 0.8)',   // Purple
-            'rgba(14, 165, 233, 0.8)',   // Sky
-            'rgba(244, 63, 94, 0.8)'     // Rose
+            '#a855f7', // purple
+            '#ec4899', // pink
+            '#3b82f6', // blue
+            '#10b981', // green
+            '#f59e0b', // amber
+            '#ef4444', // red
+            '#64748b'  // slate
         ];
         
         if (appChart) {
             appChart.destroy();
         }
         
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.font.family = "'Outfit', sans-serif";
+        const isLightMode = document.body.classList.contains('light-mode');
+        Chart.defaults.color = isLightMode ? '#475569' : '#94a3b8';
+        Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
         
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: type === 'doughnut',
+                    position: 'right'
+                },
+                tooltip: {
+                    backgroundColor: isLightMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(15, 23, 42, 0.9)',
+                    titleColor: isLightMode ? '#0f172a' : '#fff',
+                    bodyColor: isLightMode ? '#475569' : '#cbd5e1',
+                    titleFont: { size: 14, family: "'Inter', sans-serif" },
+                    bodyFont: { size: 13, family: "'Inter', sans-serif" },
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    borderColor: isLightMode ? '#e2e8f0' : 'rgba(255,255,255,0.1)',
+                    borderWidth: 1
+                }
+            }
+        };
+
+        if (type === 'bar') {
+            options.scales = {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: isLightMode ? 'rgba(0,0,0,0.05)' : 'rgba(255, 255, 255, 0.05)',
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            };
+        }
+
         appChart = new Chart(ctx, {
-            type: 'bar',
+            type: type,
             data: {
                 labels: labels,
                 datasets: [{
                     label: 'Detected Flows',
                     data: data,
                     backgroundColor: bgColors,
-                    borderRadius: 6,
-                    borderSkipped: false
+                    borderRadius: type === 'bar' ? 6 : 0,
+                    borderWidth: type === 'doughnut' ? 2 : 0,
+                    borderColor: isLightMode ? '#ffffff' : '#1e1730'
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { size: 14, family: "'Outfit', sans-serif" },
-                        bodyFont: { size: 13, family: "'Outfit', sans-serif" },
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)',
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                },
-                animation: {
-                    duration: 1500,
-                    easing: 'easeOutQuart'
-                }
-            }
+            options: options
         });
     };
 
-    // Populate Table
-    const renderTable = (domains) => {
-        domainTableBody.innerHTML = '';
+    const getBadgeClass = (appName) => {
+        const mapping = {
+            'YOUTUBE': 'badge-youtube',
+            'TIKTOK': 'badge-tiktok',
+            'FACEBOOK': 'badge-facebook',
+            'GITHUB': 'badge-github'
+        };
+        return mapping[appName] || 'badge-unknown';
+    };
+
+    // Populate Traffic List
+    const renderTrafficList = (domains) => {
+        domainList.innerHTML = '';
         
         if (domains.length === 0) {
-            domainTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8;">No domains detected</td></tr>';
+            domainList.innerHTML = '<div style="color: var(--text-muted); padding: 10px 0;">No domains detected</div>';
             return;
         }
         
-        domains.forEach(d => {
-            const tr = document.createElement('tr');
+        // Show top 5
+        domains.slice(0, 5).forEach(d => {
+            const item = document.createElement('div');
+            item.className = 'traffic-item';
             
-            const tdDomain = document.createElement('td');
-            tdDomain.textContent = d.domain;
+            item.innerHTML = `
+                <div class="domain-info">
+                    <span class="domain-name">${d.domain}</span>
+                    <span class="app-badge ${getBadgeClass(d.app)}">${d.app}</span>
+                </div>
+                <div class="flow-count">${d.count} flows</div>
+            `;
             
-            const tdApp = document.createElement('td');
-            const badge = document.createElement('span');
-            badge.className = 'app-badge';
-            badge.textContent = d.app;
-            tdApp.appendChild(badge);
-            
-            const tdFlows = document.createElement('td');
-            tdFlows.textContent = d.count;
-            
-            tr.appendChild(tdDomain);
-            tr.appendChild(tdApp);
-            tr.appendChild(tdFlows);
-            
-            domainTableBody.appendChild(tr);
+            domainList.appendChild(item);
         });
     };
 
     // API Calls
-    btnGenerate.addEventListener('click', async () => {
-        btnGenerate.disabled = true;
-        btnAnalyze.disabled = true;
-        setStatus('Generating synthetic PCAP traffic...', true);
-        
-        try {
-            const response = await fetch('/api/generate', { method: 'POST' });
-            const data = await response.json();
+    if (btnGenerate) {
+        btnGenerate.addEventListener('click', async () => {
+            btnGenerate.disabled = true;
+            setStatus('Generating traffic...', true);
             
-            if (data.status === 'success') {
-                setStatus('Traffic generated. Ready for analysis.');
-                btnAnalyze.disabled = false;
-            } else {
-                setStatus(`Error: ${data.message}`);
+            try {
+                const response = await fetch('/api/generate', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    setStatus('Traffic generated.');
+                } else {
+                    setStatus(`Error: ${data.message}`);
+                }
+            } catch (err) {
+                setStatus('Failed to reach server.');
+            } finally {
+                btnGenerate.disabled = false;
             }
-        } catch (err) {
-            setStatus('Failed to reach server.');
-        } finally {
-            btnGenerate.disabled = false;
-        }
-    });
+        });
+    }
     
-    btnAnalyze.addEventListener('click', async () => {
-        btnGenerate.disabled = true;
-        btnAnalyze.disabled = true;
-        setStatus('Analyzing packets via DPI engine...', true);
-        
-        // Hide empty state, show dashboard but reset animations
-        emptyState.classList.add('hidden');
-        resultsDashboard.classList.remove('hidden');
-        
-        // Reset counters
-        kpiTotal.textContent = '0';
-        kpiForwarded.textContent = '0';
-        kpiDropped.textContent = '0';
-        
-        try {
-            const response = await fetch('/api/analyze', { method: 'POST' });
-            const data = await response.json();
+    if (btnAnalyze) {
+        btnAnalyze.addEventListener('click', async () => {
+            console.log("Run Analysis clicked");
+            btnAnalyze.disabled = true;
+            const originalText = btnAnalyze.innerHTML;
+            btnAnalyze.innerHTML = '<span class="icon">⏳</span> Processing...';
+            setStatus('Running DPI Engine...', true);
             
-            if (data.status === 'success') {
-                setStatus('Analysis complete.');
+            // Gather blocked apps from toggles
+            const blockedApps = [];
+            document.querySelectorAll('.switch-container input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) {
+                    blockedApps.push(cb.dataset.app);
+                }
+            });
+            
+            try {
+                const response = await fetch('/api/analyze', { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ blocked_apps: blockedApps })
+                });
+                const data = await response.json();
+                console.log("Analysis API Response:", data);
                 
-                const stats = data.stats;
-                
-                // Animate KPIs
-                animateValue(kpiTotal, 0, stats.total_packets, 1000);
-                animateValue(kpiForwarded, 0, stats.forwarded, 1000);
-                animateValue(kpiDropped, 0, stats.dropped, 1000);
-                
-                // Render Chart and Table
-                renderChart(stats.applications);
-                renderTable(stats.domains);
-                
-            } else {
-                setStatus(`Analysis Error: ${data.message}`);
+                if (data.status === 'success') {
+                    setStatus('Analysis complete.');
+                    
+                    if (emptyState) emptyState.classList.add('hidden');
+                    if (resultsDashboard) resultsDashboard.classList.remove('hidden');
+                    
+                    const stats = data.stats;
+                    
+                    // Animate KPIs
+                    if (kpiTotal) animateValue(kpiTotal, 0, stats.total_packets, 1000);
+                    if (kpiForwarded) animateValue(kpiForwarded, 0, stats.forwarded, 1000);
+                    if (kpiDropped) animateValue(kpiDropped, 0, stats.dropped, 1000);
+                    
+                    // Update Top Stats Row
+                    const topKpiTotal = document.getElementById('top-kpi-total');
+                    const topKpiForwarded = document.getElementById('top-kpi-forwarded');
+                    const topKpiDropped = document.getElementById('top-kpi-dropped');
+                    const topKpiRules = document.getElementById('top-kpi-rules');
+                    
+                    if (topKpiTotal) animateValue(topKpiTotal, 0, stats.total_packets, 1000);
+                    if (topKpiForwarded) animateValue(topKpiForwarded, 0, stats.forwarded, 1000);
+                    if (topKpiDropped) animateValue(topKpiDropped, 0, stats.dropped, 1000);
+                    if (topKpiRules) animateValue(topKpiRules, 0, blockedApps.length, 1000);
+                    
+                    // Render Chart and Table
+                    renderChart(stats.applications, currentChartType);
+                    renderTrafficList(stats.domains);
+                    
+                } else {
+                    setStatus(`Analysis Error: ${data.message}`);
+                }
+            } catch (err) {
+                console.error(err);
+                setStatus('Failed to reach server.');
+            } finally {
+                btnAnalyze.disabled = false;
+                btnAnalyze.innerHTML = originalText;
             }
-        } catch (err) {
-            setStatus('Failed to reach server during analysis.');
-        } finally {
-            btnGenerate.disabled = false;
-            btnAnalyze.disabled = false;
-        }
-    });
+        });
+    }
+    
+    // Search logic
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            
+            if (resultsDashboard.classList.contains('hidden')) {
+                if (query.length > 0) {
+                    searchInput.placeholder = "Run analysis first to search traffic.";
+                    setTimeout(() => { searchInput.placeholder = "Ask about this traffic..."; }, 2500);
+                    e.target.value = '';
+                }
+                return;
+            }
+            
+            const items = domainList.querySelectorAll('.traffic-item');
+            items.forEach(item => {
+                const domain = item.querySelector('.domain-name').textContent.toLowerCase();
+                const app = item.querySelector('.app-badge').textContent.toLowerCase();
+                if (domain.includes(query) || app.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Chat Widget Logic
+    const chatToggleBtn = document.getElementById('chat-toggle');
+    const chatPanel = document.getElementById('chat-panel');
+    const chatCloseBtn = document.getElementById('chat-close');
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send');
+    const chatMessages = document.getElementById('chat-messages');
+
+    if (chatToggleBtn && chatPanel) {
+        chatToggleBtn.addEventListener('click', () => {
+            chatPanel.classList.toggle('hidden');
+        });
+
+        chatCloseBtn.addEventListener('click', () => {
+            chatPanel.classList.add('hidden');
+        });
+
+        const addMessage = (text, sender) => {
+            const msg = document.createElement('div');
+            msg.className = `chat-msg ${sender}`;
+            msg.textContent = text;
+            chatMessages.appendChild(msg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        };
+
+        const handleChat = () => {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            
+            addMessage(text, 'user');
+            chatInput.value = '';
+            
+            // Canned responses
+            setTimeout(() => {
+                const lowerText = text.toLowerCase();
+                if (lowerText.includes('dropped') || lowerText.includes('block')) {
+                    const dropped = document.getElementById('kpi-dropped').textContent;
+                    addMessage(`In the last run, we dropped ${dropped} packets.`, 'bot');
+                } else if (lowerText.includes('sni') || lowerText.includes('domain')) {
+                    addMessage('SNI stands for Server Name Indication. It tells us the domain name requested before the connection is fully encrypted.', 'bot');
+                } else if (lowerText.includes('total')) {
+                    const total = document.getElementById('kpi-total').textContent;
+                    addMessage(`We processed ${total} total packets in the last capture.`, 'bot');
+                } else {
+                    addMessage("I'm a simple bot! Try asking how many packets dropped or what SNI is.", 'bot');
+                }
+            }, 600);
+        };
+
+        chatSendBtn.addEventListener('click', handleChat);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleChat();
+        });
+    }
+
 });
